@@ -1,0 +1,44 @@
+# Secrets / environment
+.env
+.env.*
+!.env.example
+.pgpass
+
+# Keys / certificates
+*.key
+*.pem
+*.crt
+*.p12
+
+# Database dumps
+*.sql
+*.dump
+
+# Logs / runtime
+*.log
+*.jsonl
+audit/
+data/
+pg_data/
+postgres_data/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+
+# Backups / local work
+*.bak
+*.bak-*
+*.bak.*
+*.hoy
+*.orig
+*.rej
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

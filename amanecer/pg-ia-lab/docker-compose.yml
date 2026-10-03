@@ -1,0 +1,51 @@
+---
+# ─────────────────────────────────────────────────────────────────────────────
+# pg-ai-lab: Chat con IA sobre PostgreSQL
+# ─────────────────────────────────────────────────────────────────────────────
+# Servicios:
+#   pg-tools   → FastAPI que expone el esquema y ejecución SQL
+#   open-webui → Ya lo tienes; solo añade la tool (ver README)
+#   ollama     → Ya lo tienes
+#
+# Si tu Postgres ya corre fuera de Docker, comenta el servicio 'postgres'
+# y ajusta DATABASE_URL en pg-tools.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Servidor de herramientas SQL ───────────────────────────────────────────
+  pg-tools:
+    build: ./tools-api
+    container_name: pg-tools
+    restart: unless-stopped
+    ports:
+      - "8100:8100"          # Accesible en http://localhost:8100
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}/${POSTGRES_DB:-postgres}
+      AUDIT_FILE: /app/audit/pg_tools_audit.jsonl
+      STATEMENT_TIMEOUT_MS: 60000
+      MAX_LIMIT: 500
+      EXPORT_MAX_LIMIT: 5000
+      PG_TOOLS_API_KEY: ${PG_TOOLS_API_KEY}
+      API_KEY_HEADER: ${API_KEY_HEADER:-X-API-Key}
+      DOWNLOAD_TOKEN_TTL_SECONDS: ${DOWNLOAD_TOKEN_TTL_SECONDS:-300}
+    volumes:
+      - ./audit:/app/audit
+    networks:
+      - ai-lab
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/health', timeout=3).read()"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+
+networks:
+  ai-lab:
+    driver: bridge

@@ -1,0 +1,24 @@
+/* =========================================
+   Grupo Amanecer - Limpieza interfaz usuario
+   ========================================= */
+
+/* Ocultar selector de modelo */
+#model-selector-model-button {
+    display: none !important;
+}
+
+/* Ocultar botón de herramientas/integraciones */
+button[aria-label="Herramientas Disponibles"] {
+    display: none !important;
+}
+
+/* Ocultar botón de integraciones */
+#integration-menu-button,
+button[aria-label="Integraciones"] {
+    display: none !important;
+}
+
+/* Open WebUI 0.11.4 - botón herramientas */
+button[aria-label="Available Tools"] {
+    display: none !important;
+}

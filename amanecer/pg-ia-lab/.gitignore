@@ -1,0 +1,45 @@
+# Entorno / secretos
+.env
+.env.*
+!.env.example
+
+# Auditoría / logs
+audit/
+*.log
+*.jsonl
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+
+# Docker / runtime
+pg_data/
+postgres_data/
+data/
+
+# Sistema / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Backups temporales / trabajo local
+*.bak
+*.bak-*
+*.bak.*
+*.hoy
+*.orig
+*.rej
+
+# Copias completas temporales
+*.bak-before-*/
+*-backup*/
+*-before-*/
+
+# Datos privados locales
+clientes_token.csv
+private/
