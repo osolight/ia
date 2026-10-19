@@ -3,13 +3,14 @@
 Fecha de revisión: 2026-10-19.
 Repositorio: `osolight/ia`.
 Rama base: `restructure/ia-amanecer`.
-Commit revisado: `60f155ea75b39a7707d61df110e8c96f16527218`.
+Commit revisado para esta actualización documental: `a8b563637d9f0f61a80b689958290aac5c7e2e9b`.
+Observaciones técnicas originales basadas en `60f155ea75b39a7707d61df110e8c96f16527218`; se conservan salvo las actualizaciones de certificación indicadas.
 
 ## Alcance y conclusión
 
 IA Amanecer contiene un backend analítico FastAPI para Odoo, integración con Open WebUI y configuración de despliegue DEV. Hay lógica empresarial implementada para ventas, facturación, gráficos, exportaciones y auditoría. El repositorio conserva también herramientas genéricas de SQL y componentes históricos.
 
-Este estado se basa en la lectura de los archivos del commit indicado. No se verificaron servicios desplegados, credenciales, datos de Odoo, resultados SQL ni aprobaciones de usuarios. Implementación presente no equivale a certificación funcional ni a disponibilidad en PROD.
+Este estado incorpora las certificaciones DEV/PROD y los resultados confirmados por el responsable del proyecto en [UAT_CERTIFIED.md](UAT_CERTIFIED.md), contrastados con [TOOL_CATALOG.md](TOOL_CATALOG.md) y [CHANGELOG_AI.md](CHANGELOG_AI.md). Esta actualización documental no vuelve a ejecutar pruebas ni verifica servicios, credenciales o datos de Odoo en vivo. Las certificaciones se limitan a las capacidades y casos documentados; código presente no implica certificación del resto.
 
 ## Estructura real
 
@@ -18,7 +19,7 @@ Todas las rutas siguientes son relativas a `amanecer/ia-amanecer/`.
 | Ruta | Contenido observado |
 | --- | --- |
 | `README.md` | Objetivo, arquitectura y flujo de promoción. |
-| `docs/` | Arquitectura, operaciones certificadas, demos y separación PROD/DEV. |
+| `docs/` | Arquitectura, operaciones certificadas, UAT DEV/PROD, catálogo de herramientas, changelog, demos y separación PROD/DEV. |
 | `pg-ia-lab/tools-api/main.py` | Aplicación, pool PostgreSQL, SQL genérico, exportaciones y auditoría. |
 | `pg-ia-lab/tools-api/sales_tools.py` | Contratos HTTP y despacho de operaciones comerciales. |
 | `pg-ia-lab/tools-api/sales/` | 22 módulos de negocio y un `__init__.py`. |
@@ -63,7 +64,7 @@ Las reglas incluyen órdenes confirmadas, filtros de sucursal, clasificación co
 - `GET /sales/product-ranking-by-salesperson`: ranking de SKU facturados por vendedor y monto equivalente en USD.
 - `GET /sales/salesperson-ranking-by-invoiced-kg`: ranking de vendedores por kilos facturados, con período explícito o ventana de días.
 
-Estas consultas utilizan facturas de cliente publicadas (`account_move.state = 'posted'`, `move_type = 'out_invoice'`) y relaciones con pedidos. El detalle incorpora resolución de vendedores ambiguos y reglas de kilos según unidades de medida.
+Estas consultas utilizan facturas de cliente publicadas (`account_move.state = 'posted'`, `move_type = 'out_invoice'`) y relaciones con pedidos. El detalle y el ranking de SKU incorporan resolución de vendedores ambiguos. El comportamiento está validado en las herramientas que lo soportan: `needs_clarification`, sin sumar identidades distintas. Las consultas incluyen reglas de kilos según unidades de medida.
 
 `sales_invoice_detail` aparece en textos del contrato de `/sales/query`, pero no está en su conjunto de operaciones aceptadas ni tiene despacho allí. La ruta específica es la implementación disponible. Ventas confirmadas, facturación y cobranzas deben interpretarse por separado.
 
@@ -102,25 +103,48 @@ Los Compose son de DEV; los README describen PROD y las rutas `/opt/ia-amanecer`
 
 ## Validación y certificación
 
-`docs/operaciones-certificadas.md` declara certificadas las siete operaciones base y gráficos de vendedores, sucursales, productos y clientes. El código contiene capacidades adicionales que ese documento no cubre. No se encontraron resultados SQL de referencia, actas UAT ni evidencias de aprobación suficientes para certificar aquí las ampliaciones.
+[operaciones-certificadas.md](operaciones-certificadas.md) conserva la declaración histórica de las siete operaciones base y gráficos de vendedores, sucursales, productos y clientes. [UAT_CERTIFIED.md](UAT_CERTIFIED.md) y [TOOL_CATALOG.md](TOOL_CATALOG.md) actualizan el alcance certificado confirmado por el responsable del proyecto; [CHANGELOG_AI.md](CHANGELOG_AI.md) recoge estos hitos.
+
+| Capacidad | Estado actual | Alcance validado documentado |
+| --- | --- | --- |
+| `sales_invoice_detail` | CERTIFICADO DEV / CERTIFICADO PROD | Vendedor 4259, Caracas, arroz, 2026-10-06: 604.8 kg facturados; clientes Quinta Crespo y Catia II. |
+| `sales_product_ranking_by_salesperson` | CERTIFICADO DEV / CERTIFICADO PROD | Ranking de SKU del vendedor 4259, últimos 30 días de la validación. |
+| `sales_salesperson_ranking_by_invoiced_kg` | CERTIFICADO DEV / CERTIFICADO PROD | Ranking de vendedores por kilos facturados en Caracas, últimos 30 días de la validación. |
+| `sales_summary.total_kg_sold` | CERTIFICADO DEV / CERTIFICADO PROD | Prueba final de octubre en PROD: 9,234,140.3826 kg vendidos. |
+| Período canónico | CERTIFICADO DEV / CERTIFICADO PROD | Octubre: inicio inclusivo, fin exclusivo y presentación inclusiva. |
+
+Para **¿Cuántos kilogramos se han vendido en octubre?**, la herramienta validada es `sales_query`, `operation=sales_summary`. El resultado PROD de **9,234,140.3826 kg vendidos** corresponde al punto de corte de la validación y puede cambiar si cambia la base de datos. La semántica es `sale_order`, `state='sale'`: kilos vendidos, no kilos facturados.
+
+Período canónico certificado:
+
+- `date_from = 2026-10-01`
+- `date_to_exclusive = 2026-11-01`
+- `date_to_inclusive = 2026-10-31`
+- `period_text = 01/10/2026 al 31/10/2026`
+
+La resolución de vendedor ambiguo está validada dentro de `sales_invoice_detail` y `sales_product_ranking_by_salesperson`: ante varias identidades compatibles se devuelve `needs_clarification` y no se suman vendedores distintos. No se extiende esa certificación a herramientas que no soportan la resolución.
+
+Las demás operaciones nuevas sin UAT certificado permanecen **IMPLEMENTADO**: `sales_period_comparison`, `average_ticket`, `sales_by_zone`, `sales_by_state`, `sales_by_channel`, `sales_by_customer`, `sales_by_salesperson`, `sales_by_product`, `sales_by_brand`, `sales_by_category`, `purchase_frequency` y `new_vs_recurring_customers`. Las certificaciones anteriores no las elevan de estado.
 
 Los programas `tests/test_model_sales.py` y `tests/test_model_sales_multi.py` prueban decisiones y respuestas de modelos mediante Ollama y el backend. Requieren servicios y API key; sus valores por defecto apuntan a pg-tools en 8100, no al puerto DEV 8101. No constituyen una suite aislada de pruebas unitarias con aserciones.
 
-En esta revisión no se ejecutaron pruebas funcionales ni consultas contra Odoo. Tampoco se arrancaron contenedores o modelos. La disponibilidad actual de DEV y PROD queda sin verificar.
+En esta revisión documental no se ejecutaron pruebas funcionales ni consultas contra Odoo, ni se arrancaron contenedores o modelos. Se registran las certificaciones DEV/PROD ya confirmadas en UAT_CERTIFIED.md; la disponibilidad en vivo de los servicios no se volvió a comprobar.
 
 ## Pendientes derivados del estado observado
 
-1. Validar en DEV las operaciones ampliadas con SQL de referencia y casos reproducibles; registrar resultados, modelo utilizado y aprobación.
+1. Validar en DEV las operaciones nuevas que permanecen IMPLEMENTADO y no tienen UAT certificado, con SQL de referencia y casos reproducibles; registrar resultados, modelo utilizado y aprobación.
 2. Revisar la autenticación de invoice-detail y comprobar claves, permisos PostgreSQL, CORS y exposición real de herramientas SQL.
-3. Conciliar los contratos de facturación con el dispatcher y actualizar el inventario de operaciones y gráficos certificados.
+3. Conciliar los contratos de facturación con el dispatcher y mantener actualizado el inventario de operaciones y gráficos certificados.
 4. Versionar la configuración reproducible del Asesor y los procedimientos de despliegue, regresión y promoción, sin incluir secretos ni datos privados.
 5. Actualizar referencias de rutas, puertos y componentes históricos; definir el uso previsto del explorador y de las herramientas genéricas.
+6. **PENDIENTE: “Última factura en Caracas, vendedor y cliente”.** `latest_confirmed` obtiene el último pedido confirmado; no equivale a última factura ni resuelve este pendiente.
 
-El flujo de promoción documentado sigue siendo SQL de referencia → backend → curl → comparación → Open WebUI DEV → aprobación → PROD. Este documento registra hallazgos; no modifica código ni acredita una promoción.
+El flujo de promoción documentado sigue siendo SQL de referencia → backend → curl → comparación → Open WebUI DEV → aprobación → PROD. Este documento refleja las certificaciones confirmadas y conserva los pendientes técnicos; esta actualización no modifica código ni realiza una nueva promoción.
 
 ## Fuentes revisadas
 
-- `README.md` raíz y del proyecto; `docs/arquitectura.md`, `docs/prod-dev.md`, `docs/operaciones-certificadas.md`, `docs/demo.md`.
+- Para esta actualización: [UAT_CERTIFIED.md](UAT_CERTIFIED.md), [TOOL_CATALOG.md](TOOL_CATALOG.md) y [CHANGELOG_AI.md](CHANGELOG_AI.md), presentes en el commit revisado.
+- Fuentes de las observaciones técnicas conservadas: `README.md` raíz y del proyecto; `docs/arquitectura.md`, `docs/prod-dev.md`, `docs/operaciones-certificadas.md`, `docs/demo.md`.
 - `pg-ia-lab/tools-api/main.py`, `sales_tools.py`, `sales_charts.py` y módulos de `sales/`.
 - Dockerfiles, requisitos y Compose del backend y Open WebUI; configuración Nginx y README de deploy.
 - Herramienta genérica Open WebUI, explorador JSX, versiones históricas, programas de prueba y archivos gitignore.
