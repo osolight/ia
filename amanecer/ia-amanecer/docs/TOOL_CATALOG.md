@@ -11,9 +11,9 @@ Revisión: 2026-10-19. Base: `restructure/ia-amanecer`, commit `7654359b600e61fa
 | CERTIFICADO DEV | Comparación SQL/backend y validación Open WebUI DEV aprobadas e identificables. |
 | CERTIFICADO PROD | Evidencia de promoción y validación aprobada en PROD para una versión identificada. |
 
-Las 22 operaciones de negocio están IMPLEMENTADAS. No hay evidencia suficiente para asignar EN UAT, CERTIFICADO DEV o CERTIFICADO PROD a una operación concreta. Esto significa **no acreditado**, no que se haya demostrado ausencia de pruebas en los servidores.
+Las 22 operaciones de negocio están presentes en el código. Por confirmación del responsable del proyecto, las tres herramientas de facturación, sales_summary.total_kg_sold y el período canónico están CERTIFICADO DEV y CERTIFICADO PROD. Las demás operaciones nuevas sin UAT certificado conservan IMPLEMENTADO; no se asigna EN UAT sin constancia de ejecución.
 
-La declaración histórica de [operaciones-certificadas.md](operaciones-certificadas.md) se conserva en una columna separada porque no identifica entorno, versión aprobada ni resultados reproducibles. Los comentarios “certificado” del código no ascienden un estado. Véase [UAT_CERTIFIED.md](UAT_CERTIFIED.md).
+La declaración histórica de [operaciones-certificadas.md](operaciones-certificadas.md) se conserva en una columna separada porque no identifica entorno, versión aprobada ni resultados reproducibles. Los comentarios “certificado” del código no ascienden un estado. Las certificaciones confirmadas por el responsable y sus resultados se registran en [UAT_CERTIFIED.md](UAT_CERTIFIED.md); no derivan únicamente de comentarios del código.
 
 ## Dispatcher GET /sales/query
 
@@ -22,7 +22,7 @@ La declaración histórica de [operaciones-certificadas.md](operaciones-certific
 | Operación | Módulo | Función de negocio | Estado verificable | Certificación documental sin entorno |
 | --- | --- | --- | --- | --- |
 | `latest_confirmed` | `latest.py` | Último pedido confirmado; sucursal y corte as_of. | IMPLEMENTADO | Declarada |
-| `sales_summary` | `summaries.py` | Resumen por moneda, conversión, total_kg_sold y período canónico. | IMPLEMENTADO | Declarada solo para operación base |
+| `sales_summary` | `summaries.py` | Resumen por moneda, conversión, total_kg_sold y período canónico. | CERTIFICADO PROD para total_kg_sold y período canónico; incluye CERTIFICADO DEV | Declarada para operación base; ampliaciones validadas en UAT_CERTIFIED.md |
 | `top_products` | `products.py` | Productos por cantidad o monto. | IMPLEMENTADO | Declarada |
 | `top_warehouses` | `warehouses.py` | Sucursales de red ITC. | IMPLEMENTADO | Declarada |
 | `top_salespeople` | `salespeople.py` | Vendedores por monto, red ITC. | IMPLEMENTADO | Declarada |
@@ -48,9 +48,9 @@ No todos los filtros de la ruta genérica se transmiten a todos los handlers. El
 | operation_id | Ruta GET | Implementación | Alcance | Estado |
 | --- | --- | --- | --- | --- |
 | `sales_latest_confirmed` | `/sales/latest-confirmed` | SQL dentro de `sales_tools.py`. | Último pedido confirmado; ruta adicional a `operation=latest_confirmed`. | IMPLEMENTADO; certificación de esta ruta concreta no acreditada por entorno. |
-| `sales_invoice_detail` | `/sales/invoice-detail` | `sales/sales_invoice_detail.py`, `handle_sales_invoice_detail`. | Facturas publicadas por vendedor, producto, SKU y cliente; detalle limitado y resumen completo. | IMPLEMENTADO. |
-| `sales_product_ranking_by_salesperson` | `/sales/product-ranking-by-salesperson` | `sales/sales_product_ranking_by_salesperson.py`, handler homónimo con prefijo `handle_`. | SKU facturados por vendedor y monto equivalente USD. | IMPLEMENTADO. |
-| `sales_salesperson_ranking_by_invoiced_kg` | `/sales/salesperson-ranking-by-invoiced-kg` | `sales/sales_salesperson_ranking_by_invoiced_kg.py`, handler homónimo con prefijo `handle_`. | Ranking de vendedores/sucursales por kilos facturados. | IMPLEMENTADO. |
+| `sales_invoice_detail` | `/sales/invoice-detail` | `sales/sales_invoice_detail.py`, `handle_sales_invoice_detail`. | Facturas publicadas por vendedor, producto, SKU y cliente; detalle limitado y resumen completo. | CERTIFICADO PROD; también CERTIFICADO DEV. |
+| `sales_product_ranking_by_salesperson` | `/sales/product-ranking-by-salesperson` | `sales/sales_product_ranking_by_salesperson.py`, handler homónimo con prefijo `handle_`. | SKU facturados por vendedor y monto equivalente USD. | CERTIFICADO PROD; también CERTIFICADO DEV. |
+| `sales_salesperson_ranking_by_invoiced_kg` | `/sales/salesperson-ranking-by-invoiced-kg` | `sales/sales_salesperson_ranking_by_invoiced_kg.py`, handler homónimo con prefijo `handle_`. | Ranking de vendedores/sucursales por kilos facturados. | CERTIFICADO PROD; también CERTIFICADO DEV. |
 
 `sales_invoice_detail` figura en textos de `/sales/query`, pero está ausente de `supported_operations` y del despacho. Debe invocarse por su ruta específica. Las otras dos herramientas de facturación también tienen rutas propias.
 
@@ -58,14 +58,18 @@ No todos los filtros de la ruta genérica se transmiten a todos los handlers. El
 
 | Capacidad | Contrato observado | Certificación específica |
 | --- | --- | --- |
-| `sales_summary.total_kg_sold` | Líneas de pedidos confirmados, conversión de unidades de peso, mismos filtros de estado/período/almacén que el resumen. Devuelve valor y texto en `executive_summary`. | No acreditada; la declaración genérica de sales_summary no prueba este campo. |
-| Período canónico del resumen | `executive_summary.period`: `date_from`, `date_to_exclusive`, `date_to_inclusive`, `period_text`. | No acreditada. |
-| Detalle de facturación | Facturas `posted/out_invoice`, fecha `invoice_date`; detalle máximo 20, resumen de todas las filas consultadas. | No acreditada. |
-| Ranking de SKU | Vendedor obligatorio; orden por USD, kilos y desempates; máximo 20 resultados expuestos. | No acreditada. |
-| Ranking por kilos | Fecha de factura; ventana explícita o `days`, calculada en America/Caracas. No reemplaza el total vendido. | No acreditada. |
-| Vendedor ambiguo | Detalle y ranking SKU retornan aclaración con coincidencias; no se mezclan identidades. | No acreditada. |
+| `sales_summary.total_kg_sold` | Líneas de pedidos confirmados, conversión de unidades de peso, mismos filtros de estado/período/almacén que el resumen. Devuelve valor y texto en `executive_summary`. | CERTIFICADO PROD; también CERTIFICADO DEV. Pregunta y semántica de kilos vendidos validadas. |
+| Período canónico del resumen | `executive_summary.period`: `date_from`, `date_to_exclusive`, `date_to_inclusive`, `period_text`. | CERTIFICADO PROD; también CERTIFICADO DEV. |
+| Detalle de facturación | Facturas `posted/out_invoice`, fecha `invoice_date`; detalle máximo 20, resumen de todas las filas consultadas. | CERTIFICADO PROD; también CERTIFICADO DEV. |
+| Ranking de SKU | Vendedor obligatorio; orden por USD, kilos y desempates; máximo 20 resultados expuestos. | CERTIFICADO PROD; también CERTIFICADO DEV. |
+| Ranking por kilos | Fecha de factura; ventana explícita o `days`, calculada en America/Caracas. No reemplaza el total vendido. | CERTIFICADO PROD; también CERTIFICADO DEV. |
+| Vendedor ambiguo | Detalle y ranking SKU retornan aclaración con coincidencias; no se mezclan identidades. | Validado dentro de sales_invoice_detail y sales_product_ranking_by_salesperson; needs_clarification, sin sumar identidades distintas. |
 
 Los intervalos usan inicio inclusivo y fin exclusivo. Los pedidos filtran `date_order`; facturación filtra `invoice_date`. No se deben sumar ni comparar kilos vendidos y facturados suponiendo que representan el mismo universo.
+
+## Pendiente explícito
+
+**“Última factura en Caracas, vendedor y cliente” — PENDIENTE.** `latest_confirmed` corresponde a un pedido confirmado, no a una factura. Su existencia no certifica esta consulta.
 
 ## Gráficos relacionados
 
@@ -75,4 +79,4 @@ Fuera del dispatcher, `sales_charts.py` reutiliza handlers para `top_salespeople
 
 Inventario obtenido de `pg-ia-lab/tools-api/sales_tools.py` y los 22 módulos de negocio de `sales/`; `__init__.py` no añade una operación. El conteo de 22 corresponde a 19 operaciones del dispatcher y tres de facturación. La ruta adicional de última venta no añade un módulo.
 
-Contexto contrastado con [PROJECT_STATE.md](PROJECT_STATE.md), [arquitectura.md](arquitectura.md), [operaciones-certificadas.md](operaciones-certificadas.md), [prod-dev.md](prod-dev.md) y [demo.md](demo.md). No se verificó la configuración activa de herramientas ni los modelos del volumen de Open WebUI; el catálogo describe código, no disponibilidad en producción.
+Contexto contrastado con [PROJECT_STATE.md](PROJECT_STATE.md), [arquitectura.md](arquitectura.md), [operaciones-certificadas.md](operaciones-certificadas.md), [prod-dev.md](prod-dev.md) y [demo.md](demo.md). No se verificó la configuración activa de herramientas ni los modelos del volumen de Open WebUI; el inventario describe el código y las certificaciones DEV/PROD confirmadas por el responsable en UAT_CERTIFIED.md. Esta actualización no vuelve a ejecutar pruebas ni extiende esas certificaciones al resto del catálogo.
