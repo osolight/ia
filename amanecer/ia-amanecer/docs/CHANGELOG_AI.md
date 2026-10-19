@@ -66,6 +66,6 @@ Evidencia: commit [8d19d8b](https://github.com/osolight/ia/commit/8d19d8bba63362
 
 ## Documentación de seguimiento
 
-[TOOL_CATALOG.md](TOOL_CATALOG.md) inventaría las operaciones y separa IMPLEMENTADO, EN UAT, CERTIFICADO DEV y CERTIFICADO PROD. [UAT_CERTIFIED.md](UAT_CERTIFIED.md) conserva las declaraciones respaldadas por las fuentes y explicita la falta de actas para las ampliaciones.
+[TOOL_CATALOG.md](TOOL_CATALOG.md) inventaría las operaciones y separa IMPLEMENTADO, EN UAT, CERTIFICADO DEV y CERTIFICADO PROD. [UAT_CERTIFIED.md](UAT_CERTIFIED.md) contiene resultados y certificaciones DEV/PROD confirmadas para las herramientas de facturación, sales_summary.total_kg_sold y el período canónico, además del comportamiento validado de vendedor ambiguo en las herramientas que lo soportan. Registra el ranking por kilos en Caracas, últimos 30 días, y la prueba final observada en PROD para octubre: 9,234,140.3826 kg vendidos al punto de corte de validación; este valor puede cambiar si cambia la base de datos. Las demás operaciones nuevas conservan IMPLEMENTADO mientras no exista UAT certificado.
 
 Fuentes funcionales: [PROJECT_STATE.md](PROJECT_STATE.md), [arquitectura.md](arquitectura.md), [operaciones-certificadas.md](operaciones-certificadas.md), [prod-dev.md](prod-dev.md), [demo.md](demo.md), `sales_tools.py` y módulos de `sales/`.

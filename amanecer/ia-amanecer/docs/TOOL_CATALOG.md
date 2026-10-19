@@ -50,7 +50,7 @@ No todos los filtros de la ruta genérica se transmiten a todos los handlers. El
 | `sales_latest_confirmed` | `/sales/latest-confirmed` | SQL dentro de `sales_tools.py`. | Último pedido confirmado; ruta adicional a `operation=latest_confirmed`. | IMPLEMENTADO; certificación de esta ruta concreta no acreditada por entorno. |
 | `sales_invoice_detail` | `/sales/invoice-detail` | `sales/sales_invoice_detail.py`, `handle_sales_invoice_detail`. | Facturas publicadas por vendedor, producto, SKU y cliente; detalle limitado y resumen completo. | CERTIFICADO PROD; también CERTIFICADO DEV. |
 | `sales_product_ranking_by_salesperson` | `/sales/product-ranking-by-salesperson` | `sales/sales_product_ranking_by_salesperson.py`, handler homónimo con prefijo `handle_`. | SKU facturados por vendedor y monto equivalente USD. | CERTIFICADO PROD; también CERTIFICADO DEV. |
-| `sales_salesperson_ranking_by_invoiced_kg` | `/sales/salesperson-ranking-by-invoiced-kg` | `sales/sales_salesperson_ranking_by_invoiced_kg.py`, handler homónimo con prefijo `handle_`. | Ranking de vendedores/sucursales por kilos facturados. | CERTIFICADO PROD; también CERTIFICADO DEV. |
+| `sales_salesperson_ranking_by_invoiced_kg` | `/sales/salesperson-ranking-by-invoiced-kg` | `sales/sales_salesperson_ranking_by_invoiced_kg.py`, handler homónimo con prefijo `handle_`. | Ranking de vendedores/sucursales por kilos facturados; UAT: Caracas, últimos 30 días. | CERTIFICADO DEV / CERTIFICADO PROD. |
 
 `sales_invoice_detail` figura en textos de `/sales/query`, pero está ausente de `supported_operations` y del despacho. Debe invocarse por su ruta específica. Las otras dos herramientas de facturación también tienen rutas propias.
 
@@ -58,11 +58,11 @@ No todos los filtros de la ruta genérica se transmiten a todos los handlers. El
 
 | Capacidad | Contrato observado | Certificación específica |
 | --- | --- | --- |
-| `sales_summary.total_kg_sold` | Líneas de pedidos confirmados, conversión de unidades de peso, mismos filtros de estado/período/almacén que el resumen. Devuelve valor y texto en `executive_summary`. | CERTIFICADO PROD; también CERTIFICADO DEV. Pregunta y semántica de kilos vendidos validadas. |
-| Período canónico del resumen | `executive_summary.period`: `date_from`, `date_to_exclusive`, `date_to_inclusive`, `period_text`. | CERTIFICADO PROD; también CERTIFICADO DEV. |
+| `sales_summary.total_kg_sold` | Líneas de pedidos confirmados, conversión de unidades de peso, mismos filtros de estado/período/almacén que el resumen. Devuelve valor y texto en `executive_summary`. | CERTIFICADO DEV / CERTIFICADO PROD. Prueba final PROD: octubre (01/10/2026 al 31/10/2026), 9,234,140.3826 kg vendidos al punto de corte de validación; puede cambiar si cambia la base de datos. |
+| Período canónico del resumen | `executive_summary.period`: `date_from = 2026-10-01`, `date_to_exclusive = 2026-11-01`, `date_to_inclusive = 2026-10-31`, `period_text = 01/10/2026 al 31/10/2026`. | CERTIFICADO DEV / CERTIFICADO PROD. |
 | Detalle de facturación | Facturas `posted/out_invoice`, fecha `invoice_date`; detalle máximo 20, resumen de todas las filas consultadas. | CERTIFICADO PROD; también CERTIFICADO DEV. |
 | Ranking de SKU | Vendedor obligatorio; orden por USD, kilos y desempates; máximo 20 resultados expuestos. | CERTIFICADO PROD; también CERTIFICADO DEV. |
-| Ranking por kilos | Fecha de factura; ventana explícita o `days`, calculada en America/Caracas. No reemplaza el total vendido. | CERTIFICADO PROD; también CERTIFICADO DEV. |
+| Ranking por kilos | Fecha de factura; ventana explícita o `days`, calculada en America/Caracas. UAT certificado: Caracas, últimos 30 días. No reemplaza el total vendido. | CERTIFICADO DEV / CERTIFICADO PROD. |
 | Vendedor ambiguo | Detalle y ranking SKU retornan aclaración con coincidencias; no se mezclan identidades. | Validado dentro de sales_invoice_detail y sales_product_ranking_by_salesperson; needs_clarification, sin sumar identidades distintas. |
 
 Los intervalos usan inicio inclusivo y fin exclusivo. Los pedidos filtran `date_order`; facturación filtra `invoice_date`. No se deben sumar ni comparar kilos vendidos y facturados suponiendo que representan el mismo universo.

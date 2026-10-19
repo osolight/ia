@@ -33,8 +33,8 @@ Las siete preguntas de demo cubren última venta, su monto y gráficos de rankin
 | --- | --- | --- | --- |
 | `sales_invoice_detail` | CERTIFICADO DEV | CERTIFICADO PROD | Detalle del 2026-10-06, clientes y referencia histórica de octubre. |
 | `sales_product_ranking_by_salesperson` | CERTIFICADO DEV | CERTIFICADO PROD | Ranking de SKU del vendedor 4259, últimos 30 días de la validación. |
-| `sales_salesperson_ranking_by_invoiced_kg` | CERTIFICADO DEV | CERTIFICADO PROD | Ranking de cinco vendedores por kilos facturados. |
-| `sales_summary.total_kg_sold` | CERTIFICADO DEV | CERTIFICADO PROD | Pregunta, selección de herramienta y semántica de kilos vendidos. |
+| `sales_salesperson_ranking_by_invoiced_kg` | CERTIFICADO DEV | CERTIFICADO PROD | Ranking de cinco vendedores por kilos facturados en Caracas, últimos 30 días. |
+| `sales_summary.total_kg_sold` | CERTIFICADO DEV | CERTIFICADO PROD | Prueba final en PROD: octubre, 9,234,140.3826 kg vendidos al punto de corte de validación. |
 | Período canónico | CERTIFICADO DEV | CERTIFICADO PROD | Octubre: inicio inclusivo, fin exclusivo y presentación inclusiva. |
 
 La resolución de vendedor ambiguo está validada dentro de las herramientas certificadas que la soportan: detalle de factura y ranking de SKU. No constituye una herramienta independiente ni certifica ese comportamiento en rutas que no lo implementan.
@@ -90,7 +90,7 @@ Vendedor **4259**, **últimos 30 días** de la validación. No se proporcionó l
 
 Estado: **CERTIFICADO DEV / CERTIFICADO PROD**.
 
-Ranking validado; el período y los filtros de esta ejecución no fueron proporcionados. No se le atribuye la ventana de 30 días del caso anterior.
+Ranking validado: **Caracas, últimos 30 días** de la validación.
 
 | Posición | ID | Vendedor | Kg facturados | Facturas |
 | --- | --- | --- | --- | --- |
@@ -108,15 +108,24 @@ Pregunta validada: **¿Cuántos kilogramos se han vendido en octubre?**
 
 Herramienta correcta: **sales_query**, **operation=sales_summary**.
 
-Semántica certificada: kilos vendidos desde `sale_order`, `state='sale'`; **no kilos facturados**. No se proporcionó una cifra global para esta prueba; no se reutilizan los valores de facturación como resultado.
+Período validado: **01/10/2026 al 31/10/2026**.
+
+Resultado final observado en PROD: **9,234,140.3826 kg vendidos**.
+
+El valor corresponde al punto de corte de la validación y puede cambiar si cambia la base de datos.
+
+Semántica certificada: kilos vendidos desde `sale_order`, `state='sale'`; **no kilos facturados**.
 
 ### Período canónico
 
 Estado: **CERTIFICADO DEV / CERTIFICADO PROD**.
 
-Entrada validada: `date_from = 2026-10-01`, `date_to = 2026-11-01`.
+Período canónico certificado:
 
-Presentación correcta: **01/10/2026 al 31/10/2026**.
+- `date_from = 2026-10-01`
+- `date_to_exclusive = 2026-11-01`
+- `date_to_inclusive = 2026-10-31`
+- `period_text = 01/10/2026 al 31/10/2026`
 
 Regla certificada: **date_from inclusivo / date_to exclusivo**.
 
