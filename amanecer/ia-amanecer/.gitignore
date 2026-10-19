@@ -1,0 +1,45 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.crt
+*.p12
+
+# Private / runtime data
+private/
+clientes_token.csv
+audit/
+data/
+webui.db
+*.db
+*.jsonl
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.venv/
+venv/
+
+# Backups / snapshots
+*.bak
+*.bak-*
+*.bak.*
+*.hoy
+*.orig
+*.rej
+*.tar
+*.tar.gz
+*.tgz
+
+# Runtime database / storage
+pg_data/
+postgres_data/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store

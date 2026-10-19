@@ -4,7 +4,7 @@ Resumen certificado de ventas por período.
 Extraído de sales_tools.py sin modificar la lógica certificada.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from fastapi import HTTPException
 
@@ -53,6 +53,22 @@ async def handle_sales_summary(
                 "a date_from."
             ),
         )
+
+    date_from_date = date_from_dt.date()
+    date_to_exclusive_date = date_to_dt.date()
+    date_to_inclusive_date = (
+        date_to_dt - timedelta(microseconds=1)
+    ).date()
+
+    period = {
+        "date_from": str(date_from_date),
+        "date_to_exclusive": str(date_to_exclusive_date),
+        "date_to_inclusive": str(date_to_inclusive_date),
+        "period_text": (
+            f"{date_from_date.strftime('%d/%m/%Y')} al "
+            f"{date_to_inclusive_date.strftime('%d/%m/%Y')}"
+        ),
+    }
 
     where_clauses = [
         "so.state = 'sale'",
@@ -142,9 +158,85 @@ async def handle_sales_summary(
             rc.id
     """
 
+    # -----------------------------------------------------
+    # KG vendidos certificados
+    #
+    # Política:
+    # - KG es la UoM de referencia id=12.
+    # - Si secondary_uom pertenece a la categoría de peso,
+    #   usamos secondary_quantity y la convertimos a KG.
+    # - En caso contrario, si product_uom pertenece a la
+    #   categoría de peso, usamos product_uom_qty.
+    # - Otras categorías no aportan KG.
+    #
+    # Reutiliza exactamente los mismos filtros del resumen:
+    # estado, período y almacén.
+    # -----------------------------------------------------
+    kg_sql = f"""
+        WITH kg_reference AS (
+            SELECT
+                category_id,
+                factor
+            FROM uom_uom
+            WHERE id = 12
+        )
+        SELECT
+            COALESCE(
+                SUM(
+                    CASE
+                        WHEN su.category_id = kgref.category_id
+                             AND sol.secondary_quantity IS NOT NULL
+                             AND su.factor IS NOT NULL
+                             AND su.factor <> 0
+                        THEN (
+                            sol.secondary_quantity
+                            / su.factor
+                            * kgref.factor
+                        )
+
+                        WHEN u.category_id = kgref.category_id
+                             AND sol.product_uom_qty IS NOT NULL
+                             AND u.factor IS NOT NULL
+                             AND u.factor <> 0
+                        THEN (
+                            sol.product_uom_qty
+                            / u.factor
+                            * kgref.factor
+                        )
+
+                        ELSE 0
+                    END
+                ),
+                0
+            ) AS total_kg_sold
+
+        FROM sale_order so
+
+        JOIN sale_order_line sol
+            ON sol.order_id = so.id
+
+        LEFT JOIN stock_warehouse sw
+            ON sw.id = so.warehouse_id
+
+        LEFT JOIN uom_uom u
+            ON u.id = sol.product_uom
+
+        LEFT JOIN uom_uom su
+            ON su.id = sol.secondary_uom_id
+
+        CROSS JOIN kg_reference kgref
+
+        WHERE {where_sql}
+    """
+
     async with pool_getter().acquire() as conn:
         rows = await conn.fetch(
             sql,
+            *params,
+        )
+
+        kg_row = await conn.fetchrow(
+            kg_sql,
             *params,
         )
 
@@ -346,6 +438,29 @@ async def handle_sales_summary(
             "rows_returned": 0,
         })
 
+        return {
+            "found": False,
+            "definition": {
+                "operation": "sales_summary",
+                "table": "sale_order",
+                "state": "sale",
+                "date_field": "date_order",
+                "meaning": (
+                    "Resumen de órdenes de venta "
+                    "confirmadas por período"
+                ),
+                "currency_policy": (
+                    "Los importes nunca se suman "
+                    "entre monedas diferentes."
+                ),
+            },
+            "filters": filters,
+            "message": (
+                "No se encontraron órdenes "
+                "confirmadas para los filtros indicados."
+            ),
+        }
+
     if conversion["bs_per_usd"] is not None:
         conversion["bs_per_usd_text"] = (
             f"{conversion['bs_per_usd']:,.4f} Bs/USD"
@@ -432,6 +547,17 @@ async def handle_sales_summary(
         for row in rows
     )
 
+    total_kg_sold = (
+        kg_row["total_kg_sold"]
+        if kg_row
+        and kg_row["total_kg_sold"] is not None
+        else 0
+    )
+
+    total_kg_sold_text = (
+        f"{total_kg_sold:,.4f} kg"
+    )
+
     currency_count = len(rows)
     mixed_currencies = currency_count > 1
 
@@ -456,6 +582,7 @@ async def handle_sales_summary(
         "duration_ms": duration_ms,
         "rows_returned": len(rows),
         "order_count": total_order_count,
+        "total_kg_sold": total_kg_sold,
     })
 
     # ---------------------------------------------------------
@@ -481,7 +608,10 @@ async def handle_sales_summary(
     )
 
     executive_summary = {
+        "period": period,
         "overall_order_count": total_order_count,
+        "total_kg_sold": total_kg_sold,
+        "total_kg_sold_text": total_kg_sold_text,
         "mixed_currencies": mixed_currencies,
 
         "usd": {
@@ -522,15 +652,28 @@ async def handle_sales_summary(
 
         "conversion": {
             "conversion_date": str(conversion_date_obj),
+
+            "bs_per_usd": conversion.get(
+                "bs_per_usd"
+            ),
             "bs_per_usd_text": conversion.get(
                 "bs_per_usd_text"
+            ),
+
+            "ves_equivalent_usd": conversion.get(
+                "ves_equivalent_usd"
             ),
             "ves_equivalent_usd_text": conversion.get(
                 "ves_equivalent_usd_text"
             ),
+
+            "total_equivalent_usd": conversion.get(
+                "total_equivalent_usd"
+            ),
             "total_equivalent_usd_text": conversion.get(
                 "total_equivalent_usd_text"
             ),
+
             "missing_rate_order_count": conversion.get(
                 "missing_rate_order_count"
             ),
@@ -538,8 +681,9 @@ async def handle_sales_summary(
     }
 
     executive_answer = (
-        f"El período consultado registra "
+        f"El período {period['period_text']} registra "
         f"{total_order_count:,} órdenes confirmadas. "
+        f"Kg vendidos: {total_kg_sold_text}. "
         f"En USD: "
         f"{conversion.get('usd_order_count', 0):,} órdenes por "
         f"{usd_item.get('amount_total_text') if usd_item else 'USD 0'}. "
@@ -564,4 +708,5 @@ async def handle_sales_summary(
     return {
         "found": True,
         "answer": executive_answer,
+        "summary": executive_summary,
     }

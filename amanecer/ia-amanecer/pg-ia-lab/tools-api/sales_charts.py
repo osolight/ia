@@ -17,6 +17,7 @@ from sales.customers import handle_top_customers
 from sales.products import handle_top_products
 from sales.salespeople import handle_top_salespeople
 from sales.warehouses import handle_top_warehouses
+from sales.sales_by_category import handle_sales_by_category
 from sales_tools import parse_iso_datetime
 
 
@@ -387,7 +388,19 @@ def register_sales_chart_routes(
         description=(
             "Genera visualizaciones usando los mismos datos certificados "
             "de sales_query. "
-            "Soporta top_salespeople, top_warehouses, top_products y top_customers."
+            "Use esta herramienta UNICAMENTE cuando el usuario solicite "
+            "explícitamente una gráfica, gráfico, chart o visualización. "
+            "No la invoque automáticamente después de sales_query. "
+            "No interprete ejemplos o descripciones de parámetros como "
+            "solicitudes del usuario ni como datos empresariales. "
+            "Soporta top_salespeople, top_warehouses, top_products, top_customers y sales_by_category. ""Cuando el usuario solicite un gráfico de categorías, ranking visual de categorías o barras de categorías, use operation='sales_by_category'. Para la certificación del 29/09/2026 utilice conversion_date='2026-10-05'."
+            "Cuando el usuario indique una sola fecha, "
+            "date_from debe ser el inicio de ese día y "
+            "date_to debe ser el inicio del día siguiente, "
+            "porque date_to es exclusivo. "
+            "Ejemplo: para el 29/09/2026 use "
+            "date_from='2026-09-29T00:00:00' y "
+            "date_to='2026-09-30T00:00:00'. "
         ),
         response_class=HTMLResponse,
     )
@@ -399,11 +412,12 @@ def register_sales_chart_routes(
             "top_warehouses",
             "top_products",
             "top_customers",
+            "sales_by_category",
         ] = Query(
             "top_salespeople",
             description=(
                 "Tipo de gráfico: "
-                "top_salespeople, top_warehouses, top_products o top_customers."
+                "top_salespeople, top_warehouses, top_products, top_customers o sales_by_category."
             ),
         ),
 
@@ -411,7 +425,7 @@ def register_sales_chart_routes(
             None,
             description=(
                 "Sucursal opcional para vendedores, productos o clientes, "
-                "por ejemplo CARACAS."
+                "Indique el nombre o código de la sucursal."
             ),
         ),
 
@@ -419,7 +433,7 @@ def register_sales_chart_routes(
             None,
             description=(
                 "Estado geográfico opcional para top_customers, "
-                "por ejemplo MIRANDA."
+                "Indique el nombre del estado geográfico."
             ),
         ),
 
@@ -427,7 +441,7 @@ def register_sales_chart_routes(
             None,
             description=(
                 "Zona comercial opcional para top_customers, "
-                "por ejemplo BARINAS-EL CARMEN."
+                "Indique el nombre de la zona comercial."
             ),
         ),
 
@@ -686,6 +700,56 @@ def register_sales_chart_routes(
                 value_mode="usd",
                 secondary_key="order_count",
                 secondary_label="órdenes",
+            )
+
+        # -----------------------------------------------------
+        # TOP CATEGORIAS
+        # F020 - reutiliza handler certificado
+        # -----------------------------------------------------
+
+        if operation == "sales_by_category":
+
+            result = await handle_sales_by_category(
+                operation="sales_by_category",
+                request=request,
+                pool_getter=pool_getter,
+                audit_write=audit_write,
+                client_host=client_host,
+                started=started,
+                parse_iso_datetime=parse_iso_datetime,
+                warehouse=warehouse,
+                category=None,
+                date_from=date_from,
+                date_to=date_to,
+                conversion_date=conversion_date,
+                limit=limit,
+            )
+
+            items = result.get("categories", [])
+
+            if not items:
+                return _render_empty_chart(
+                    "Ranking de categorías"
+                )
+
+            location = (
+                warehouse.upper()
+                if warehouse
+                else "Nacional"
+            )
+
+            return _render_ranked_bar_chart(
+                title=f"Top {len(items)} categorías por ventas",
+                subtitle=(
+                    f"{location} · "
+                    f"{date_from} → {date_to}"
+                ),
+                items=items,
+                name_key="category_name",
+                value_key="total_equivalent_usd",
+                value_mode="usd",
+                secondary_key="quantity",
+                secondary_label="unidades",
             )
 
         raise HTTPException(

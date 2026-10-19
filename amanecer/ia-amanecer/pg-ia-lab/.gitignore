@@ -26,20 +26,3 @@ data/
 .DS_Store
 .vscode/
 .idea/
-
-# Backups temporales / trabajo local
-*.bak
-*.bak-*
-*.bak.*
-*.hoy
-*.orig
-*.rej
-
-# Copias completas temporales
-*.bak-before-*/
-*-backup*/
-*-before-*/
-
-# Datos privados locales
-clientes_token.csv
-private/
